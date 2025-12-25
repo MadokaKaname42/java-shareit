@@ -11,7 +11,7 @@ import java.util.*;
 public class UserRepositoryImpl implements UserRepository {
     private final Map<Long, User> users;
 
-    private static long id;
+    private long id;
 
     public UserRepositoryImpl() {
         users = new HashMap<>();
