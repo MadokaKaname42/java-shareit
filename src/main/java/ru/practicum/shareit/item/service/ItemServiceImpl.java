@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -15,20 +16,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final ItemMapper itemMapper;
 
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
-        this.itemRepository = itemRepository;
-        this.userRepository = userRepository;
-    }
 
     @Override
     public List<ItemDto> getAll(Long userId) {
         List<ItemDto> items = new ArrayList<>();
         for (Item item : itemRepository.getAllByUser(userId)) {
-            items.add(toItemDto(item));
+            items.add(itemMapper.itemModelToItemDto(item));
         }
         return items;
     }
@@ -38,18 +37,18 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена id: " + id));
 
-        return toItemDto(item);
+        return itemMapper.itemModelToItemDto(item);
     }
 
     @Override
     public ItemDto create(ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Нельзя создать вещь. Пользователь не найден id: " + userId));
-        Item item = toItem(itemDto);
+        Item item = itemMapper.itemDtoToItemModel(itemDto);
         item.setOwner(user);
         itemRepository.create(item);
 
-        return toItemDto(item);
+        return itemMapper.itemModelToItemDto(item);
     }
 
     @Override
@@ -69,7 +68,7 @@ public class ItemServiceImpl implements ItemService {
             item.setAvailable(itemDto.getAvailable());
         }
 
-        return toItemDto(item);
+        return itemMapper.itemModelToItemDto(item);
     }
 
     @Override
@@ -82,7 +81,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> search(String text) {
         if (!text.isBlank()) {
             return itemRepository.findAll().stream().filter(i ->
-                    isSearched(text, i)).map(ItemMapper::toItemDto).collect(Collectors.toList());
+                    isSearched(text, i)).map(itemMapper::itemModelToItemDto).collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }

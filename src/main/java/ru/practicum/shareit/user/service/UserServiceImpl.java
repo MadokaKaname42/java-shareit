@@ -18,27 +18,28 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public List<UserDto> getAll() {
-        return userRepository.findAll().stream().map(UserMapper::toUserDto).collect(toList());
+        return userRepository.findAll().stream().map(userMapper::userModelToUserDto).collect(toList());
     }
 
     public UserDto getById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден ID: " + id));
 
-        return UserMapper.toUserDto(user);
+        return userMapper.userModelToUserDto(user);
     }
 
     public UserDto create(UserDto userDto) {
-        User user = UserMapper.toUser(userDto);
+        User user = userMapper.userDtoToUserModel(userDto);
         throwIfEmailNotUnique(user);
 
-        return UserMapper.toUserDto(userRepository.create(user));
+        return userMapper.userModelToUserDto(userRepository.create(user));
     }
 
     public UserDto update(UserDto userDto, Long id) {
-        User user = UserMapper.toUser(userDto);
+        User user = userMapper.userDtoToUserModel(userDto);
         User updatedUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден id = {}" + id));
         if (user.getEmail() != null && !user.getEmail().isBlank()) {
@@ -49,7 +50,7 @@ public class UserServiceImpl implements UserService {
             updatedUser.setName(user.getName());
         }
 
-        return UserMapper.toUserDto(updatedUser);
+        return userMapper.userModelToUserDto(updatedUser);
     }
 
     public void delete(Long id) {
