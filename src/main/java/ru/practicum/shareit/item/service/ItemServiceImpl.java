@@ -10,6 +10,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -82,8 +83,12 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> search(String text) {
-        return itemRepository.findAll().stream().filter(i ->
-                isSearched(text, i)).map(ItemMapper::toItemDto).collect(Collectors.toList());
+        if (!text.isBlank()) {
+            return itemRepository.findAll().stream().filter(i ->
+                    isSearched(text, i)).map(ItemMapper::toItemDto).collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     private Boolean isSearched(String text, Item item) {
