@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import ru.practicum.shareit.validation.Create;
-import ru.practicum.shareit.validation.Update;
+import ru.practicum.shareit.common.validation.validation.Create;
+import ru.practicum.shareit.common.validation.validation.Update;
 
 
 @Getter

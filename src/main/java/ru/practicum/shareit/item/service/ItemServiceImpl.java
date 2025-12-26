@@ -14,9 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.practicum.shareit.item.dto.ItemMapper.toItem;
-import static ru.practicum.shareit.item.dto.ItemMapper.toItemDto;
-
 @Service
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
