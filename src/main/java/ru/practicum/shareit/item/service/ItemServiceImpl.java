@@ -3,6 +3,13 @@ package ru.practicum.shareit.item.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.comments.dto.CommentDto;
+import ru.practicum.shareit.comments.dto.CommentMapper;
+import ru.practicum.shareit.comments.model.Comment;
+import ru.practicum.shareit.comments.repository.CommentRepository;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
@@ -14,7 +21,9 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.time.LocalDateTime.now;
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +31,9 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final ItemMapper itemMapper;
+    private final BookingRepository bookingRepository;
+    private final CommentMapper commentMapper;
+    private final CommentRepository commentRepository;
 
 
     @Override
@@ -38,7 +50,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена id: " + id));
 
-        return itemMapper.itemModelToItemDto(item);
+        return itemMapper.itemModelToItemDto(item, commentRepository);
     }
 
     @Transactional
@@ -86,7 +98,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> search(String text) {
         if (!text.isBlank()) {
             return itemRepository.findAll().stream().filter(i ->
-                    isSearched(text, i)).map(itemMapper::itemModelToItemDto).collect(Collectors.toList());
+                    isSearched(text, i)).map(itemMapper::itemModelToItemDto).collect(toList());
         } else {
             return Collections.emptyList();
         }
@@ -95,5 +107,25 @@ public class ItemServiceImpl implements ItemService {
     private Boolean isSearched(String text, Item item) {
         return (item.getName().toLowerCase().contains(text.toLowerCase()) ||
                 item.getDescription().toLowerCase().contains(text.toLowerCase())) && item.isAvailable();
+    }
+
+    @Transactional
+    @Override
+    public CommentDto createComment(Long itemId, Long userId, CommentDto commentDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Does not exist User with Id " + userId));
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Does not exist Item with Id " + itemId));
+        if (bookingRepository.findAllByBookerIdAndItemIdAndStatusEqualsAndEndIsBefore(userId, itemId, BookingStatus.APPROVED,
+                now()).isEmpty()) {
+            throw new BadRequestException("Item has not been rented by the user or the rental of the item has not yet been completed");
+        }
+        Comment comment = commentMapper.commentDtoToCommentModel(commentDto);
+        comment.setItem(item);
+        comment.setAuthor(user);
+        comment.setCreated(now());
+        commentRepository.save(comment);
+
+        return commentMapper.commentModelToCommentDto(comment);
     }
 }

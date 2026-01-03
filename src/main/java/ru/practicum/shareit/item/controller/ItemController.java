@@ -1,12 +1,14 @@
 package ru.practicum.shareit.item.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.comments.dto.CommentDto;
+import ru.practicum.shareit.common.validation.validation.Create;
 import ru.practicum.shareit.common.web.HeaderConstants;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.common.validation.validation.Create;
 
 import java.util.List;
 
@@ -46,5 +48,11 @@ public class ItemController {
     @GetMapping("/search")
     public List<ItemDto> search(@RequestParam String text) {
         return itemService.search(text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createComment(@PathVariable Long itemId, @RequestHeader(HeaderConstants.USER_ID) Long userId,
+                                    @Valid @RequestBody CommentDto commentDto) {
+        return itemService.createComment(itemId, userId, commentDto);
     }
 }
