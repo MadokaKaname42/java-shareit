@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -24,9 +25,9 @@ public class ItemServiceImpl implements ItemService {
 
 
     @Override
-    public List<ItemDto> getAll(Long userId) {
+    public List<ItemDto> getAll(Long ownerId) {
         List<ItemDto> items = new ArrayList<>();
-        for (Item item : itemRepository.getAllByUser(userId)) {
+        for (Item item : itemRepository.findAllByOwnerId(ownerId)) {
             items.add(itemMapper.itemModelToItemDto(item));
         }
         return items;
@@ -40,17 +41,19 @@ public class ItemServiceImpl implements ItemService {
         return itemMapper.itemModelToItemDto(item);
     }
 
+    @Transactional
     @Override
     public ItemDto create(ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Нельзя создать вещь. Пользователь не найден id: " + userId));
         Item item = itemMapper.itemDtoToItemModel(itemDto);
         item.setOwner(user);
-        itemRepository.create(item);
+        itemRepository.save(item);
 
         return itemMapper.itemModelToItemDto(item);
     }
 
+    @Transactional
     @Override
     public ItemDto update(ItemDto itemDto, Long id, Long userId) {
         Item item = itemRepository.findById(id)
@@ -71,10 +74,12 @@ public class ItemServiceImpl implements ItemService {
         return itemMapper.itemModelToItemDto(item);
     }
 
+    @Transactional
     @Override
     public void delete(Long id) {
-        getById(id);
-        itemRepository.delete(id);
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена id: " + id));
+        itemRepository.delete(item);
     }
 
     @Override
