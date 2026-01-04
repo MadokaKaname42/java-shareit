@@ -101,7 +101,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.1.2</version>
                     <configuration>
-<configLocation>checkstyle.xml</configLocation>
+                        <configLocation>checkstyle.xml</configLocation>
                         <failOnViolation>true</failOnViolation>
                         <logViolationsToConsole>true</logViolationsToConsole>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -183,7 +183,7 @@
                                                 <minimum>0.6</minimum>
                                             </limit>
                                             <limit>
-											<counter>METHOD</counter>
+                                                <counter>METHOD</counter>
                                                 <value>COVEREDRATIO</value>
                                                 <minimum>0.7</minimum>
                                             </limit>
