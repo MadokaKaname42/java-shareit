@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking.dto;
 
+import java.util.List;
 import org.mapstruct.Mapper;
 import ru.practicum.shareit.booking.model.Booking;
 
@@ -12,4 +13,6 @@ public interface BookingMapper {
     Booking bookingForItemDtoToBookingModel(BookingForItemDto bookingForItemDto);
 
     BookingDto bookingModelToBookingDto(Booking booking);
+
+    List<BookingForItemDto> mapBookingsToBookingForItemDtos (List<Booking> booking);
 }
