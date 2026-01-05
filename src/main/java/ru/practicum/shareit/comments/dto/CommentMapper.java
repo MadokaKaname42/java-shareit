@@ -10,4 +10,7 @@ public interface CommentMapper {
 
     @Mapping(source = "author.name", target = "authorName")
     CommentDto commentModelToCommentDto(Comment comment);
+
+    @Mapping(source = "author.name", target = "authorName")
+    List<CommentDto> toDto(List<Comment> comments);
 }
