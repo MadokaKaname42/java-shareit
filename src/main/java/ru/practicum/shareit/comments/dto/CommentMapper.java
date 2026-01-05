@@ -1,5 +1,6 @@
 package ru.practicum.shareit.comments.dto;
 
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.practicum.shareit.comments.model.Comment;
