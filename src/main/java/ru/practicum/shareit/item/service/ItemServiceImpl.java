@@ -49,8 +49,9 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto getById(Long id) {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена id: " + id));
-
-        return itemMapper.itemModelToItemDto(item, commentRepository);
+        ItemDto itemDto = itemMapper.itemModelToItemDto(item);
+        itemDto.setComment(commentRepository.findAllByItemId(Long id))
+        return itemDto;
     }
 
     @Transactional
