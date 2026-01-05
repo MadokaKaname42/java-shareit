@@ -50,7 +50,7 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена id: " + id));
         ItemDto itemDto = itemMapper.itemModelToItemDto(item);
-        itemDto.setComments(commentRepository.findAllByItemId(id));
+        itemDto.setComments(commentMapper.toDto(commentRepository.findAllByItemId(id)));
         return itemDto;
     }
 
