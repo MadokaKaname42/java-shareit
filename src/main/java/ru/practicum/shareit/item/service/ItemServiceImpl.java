@@ -108,17 +108,13 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> search(String text) {
-        if (!text.isBlank()) {
-            return itemRepository.findAll().stream().filter(i ->
-                    isSearched(text, i)).map(itemMapper::itemModelToItemDto).collect(toList());
-        } else {
-            return Collections.emptyList();
-        }
+    if (text == null || text.isBlank()) {
+        return Collections.emptyList();
     }
-
-    private Boolean isSearched(String text, Item item) {
-        return (item.getName().toLowerCase().contains(text.toLowerCase()) ||
-                item.getDescription().toLowerCase().contains(text.toLowerCase())) && item.isAvailable();
+    List<Item> items = itemRepository.findBySearchText(text);
+    return items.stream()
+                .map(itemMapper::itemModelToItemDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
