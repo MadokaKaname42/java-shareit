@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.comments.dto.CommentDto;
 import ru.practicum.shareit.comments.dto.CommentMapper;
 import ru.practicum.shareit.comments.model.Comment;
