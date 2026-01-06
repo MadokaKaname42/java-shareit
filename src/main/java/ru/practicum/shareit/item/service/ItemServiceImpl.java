@@ -41,8 +41,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> getAll(Long ownerId) {
-        List<ItemDto> itemDtos = itemMapper.mapItemsToDtos(itemRepository.findAllByOwnerId(ownerId)); 
-        List<BookingForItemDto> bookingDtos = bookingMapper.mapBookingsToBookingForItemDtos(bookingRepository.findAllByBookerAndStatusEquals(userRepository.findById(ownerId), BookingStatus.APPROVED, Sort.by("id")));
+        List<ItemDto> itemDtos = itemMapper.mapItemsToDtos(itemRepository.findAllByOwnerId(ownerId));
+
+        User owner = userRepository.findById(ownerId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        List<BookingForItemDto> bookingDtos = bookingMapper.mapBookingsToBookingForItemDtos(bookingRepository.findAllByBookerAndStatusEquals(owner, BookingStatus.APPROVED, Sort.by("id")));
+        
         enrichItemsWithBookingInfo(itemDtos, bookingDtos);
         
         return items;
