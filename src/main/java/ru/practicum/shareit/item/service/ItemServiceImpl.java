@@ -56,7 +56,7 @@ public class ItemServiceImpl implements ItemService {
         
         enrichItemsWithBookingInfo(itemDtos, bookingDtos);
         
-        return itemsDtos;
+        return itemDtos;
     }
 
     @Override
@@ -155,11 +155,11 @@ public class ItemServiceImpl implements ItemService {
             List<BookingForItemDto> itemBookings = bookingsByItemId.getOrDefault(itemId, Collections.emptyList());
             
             Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
-                .filter(b -> b.getStartDate().isBefore(now))
+                .filter(b -> b.getStart().isBefore(now))
                 .max(Comparator.comparing(BookingForItemDto::getStart));
             
             Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
-                .filter(b -> b.getStartDate().isAfter(now))
+                .filter(b -> b.getStart().isAfter(now))
                 .min(Comparator.comparing(BookingForItemDto::getStart));
             
             lastBookingOpt.ifPresent(lastBooking -> {
