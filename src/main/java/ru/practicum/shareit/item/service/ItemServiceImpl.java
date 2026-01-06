@@ -144,19 +144,16 @@ public class ItemServiceImpl implements ItemService {
     public void enrichItemsWithBookingInfo(List<ItemDto> itemDtos, List<BookingForItemDto> bookings) {
         Map<Long, List<BookingForItemDto>> bookingsByItemId = bookings.stream()
             .collect(Collectors.groupingBy(BookingForItemDto::getItemId));
-    
         LocalDateTime now = LocalDateTime.now();
         for (ItemDto item : itemDtos) {
             Long itemId = item.getId();
             List<BookingForItemDto> itemBookings = bookingsByItemId.getOrDefault(itemId, Collections.emptyList());
-            
             Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStart().isBefore(now))
                 .max(Comparator.comparing(BookingForItemDto::getStart));
             Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStart().isAfter(now))
                 .min(Comparator.comparing(BookingForItemDto::getStart));
-            
             lastBookingOpt.ifPresent(lastBooking -> {
                 item.setLastBooking(lastBooking);
             });
