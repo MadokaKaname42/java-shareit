@@ -22,7 +22,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,9 +52,7 @@ public class ItemServiceImpl implements ItemService {
 
         User owner = userRepository.findById(ownerId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         List<BookingForItemDto> bookingDtos = bookingMapper.mapBookingsToBookingForItemDtos(bookingRepository.findAllByBookerAndStatusEquals(owner, BookingStatus.APPROVED, Sort.by("id")));
-        
         enrichItemsWithBookingInfo(itemDtos, bookingDtos);
-        
         return itemDtos;
     }
 
@@ -149,7 +146,6 @@ public class ItemServiceImpl implements ItemService {
             .collect(Collectors.groupingBy(BookingForItemDto::getItemId));
     
         LocalDateTime now = LocalDateTime.now();
-
         for (ItemDto item : itemDtos) {
             Long itemId = item.getId();
             List<BookingForItemDto> itemBookings = bookingsByItemId.getOrDefault(itemId, Collections.emptyList());
@@ -157,7 +153,6 @@ public class ItemServiceImpl implements ItemService {
             Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStart().isBefore(now))
                 .max(Comparator.comparing(BookingForItemDto::getStart));
-            
             Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStart().isAfter(now))
                 .min(Comparator.comparing(BookingForItemDto::getStart));
