@@ -2,12 +2,13 @@ package ru.practicum.shareit.item.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.dto.BookingForItemDto;
+import ru.practicum.shareit.booking.dto.BookingMapper;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
-import ru.practicum.shareit.booking.dto.BookingMapper;
-import ru.practicum.shareit.booking.dto.BookingForItemDto;
 import ru.practicum.shareit.comments.dto.CommentDto;
 import ru.practicum.shareit.comments.dto.CommentMapper;
 import ru.practicum.shareit.comments.model.Comment;
@@ -21,14 +22,9 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.Map;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Optional;
-import java.util.Comparator;
-
 import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.time.LocalDateTime.now;
 
@@ -47,12 +43,13 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> getAll(Long ownerId) {
-        List<ItemDto> itemDtos = itemMapper.mapItemsToDtos(itemRepository.findAllByOwnerId(ownerId));
+        List<ItemDto> itemsDto = itemMapper.mapItemsToDtos(itemRepository.findAllByOwnerId(ownerId));
 
         User owner = userRepository.findById(ownerId).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        List<BookingForItemDto> bookingDtos = bookingMapper.mapBookingsToBookingForItemDtos(bookingRepository.findAllByBookerAndStatusEquals(owner, BookingStatus.APPROVED, Sort.by("id")));
-        enrichItemsWithBookingInfo(itemDtos, bookingDtos);
-        return itemDtos;
+        List<Booking> bookings = bookingRepository.findAllByBookerAndStatusEquals(owner, BookingStatus.APPROVED, Sort.by("id"));
+        List<BookingForItemDto> bookingsDto = bookingMapper.mapBookingsToBookingForItemDtos(bookings);
+        enrichItemsWithBookingInfo(itemsDto, bookingsDto);
+        return itemsDto;
     }
 
     @Override
@@ -107,11 +104,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> search(String text) {
-    if (text == null || text.isBlank()) {
-        return Collections.emptyList();
-    }
-    List<Item> items = itemRepository.findBySearchText(text);
-    return items.stream()
+        if (text == null || text.isBlank()) {
+            return Collections.emptyList();
+        }
+        List<Item> items = itemRepository.findBySearchText(text);
+        return items.stream()
                 .map(itemMapper::itemModelToItemDto)
                 .collect(Collectors.toList());
     }
@@ -136,19 +133,19 @@ public class ItemServiceImpl implements ItemService {
         return commentMapper.commentModelToCommentDto(comment);
     }
 
-    public void enrichItemsWithBookingInfo(List<ItemDto> itemDtos, List<BookingForItemDto> bookings) {
+    public void enrichItemsWithBookingInfo(List<ItemDto> itemsDto, List<BookingForItemDto> bookings) {
         Map<Long, List<BookingForItemDto>> bookingsByItemId = bookings.stream()
-            .collect(Collectors.groupingBy(BookingForItemDto::getItemId));
+                .collect(Collectors.groupingBy(BookingForItemDto::getItemId));
         LocalDateTime now = LocalDateTime.now();
-        for (ItemDto item : itemDtos) {
+        for (ItemDto item : itemsDto) {
             Long itemId = item.getId();
             List<BookingForItemDto> itemBookings = bookingsByItemId.getOrDefault(itemId, Collections.emptyList());
             Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
-                .filter(b -> b.getStart().isBefore(now))
-                .max(Comparator.comparing(BookingForItemDto::getStart));
+                    .filter(b -> b.getStart().isBefore(now))
+                    .max(Comparator.comparing(BookingForItemDto::getStart));
             Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
-                .filter(b -> b.getStart().isAfter(now))
-                .min(Comparator.comparing(BookingForItemDto::getStart));
+                    .filter(b -> b.getStart().isAfter(now))
+                    .min(Comparator.comparing(BookingForItemDto::getStart));
             lastBookingOpt.ifPresent(lastBooking -> {
                 item.setLastBooking(lastBooking);
             });
