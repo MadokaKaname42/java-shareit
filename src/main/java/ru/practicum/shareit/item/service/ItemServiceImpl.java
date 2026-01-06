@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.comments.dto.CommentDto;
@@ -21,6 +22,7 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toList;
@@ -34,14 +36,15 @@ public class ItemServiceImpl implements ItemService {
     private final BookingRepository bookingRepository;
     private final CommentMapper commentMapper;
     private final CommentRepository commentRepository;
+    private final BookingMapper bookingMapper;
 
 
     @Override
     public List<ItemDto> getAll(Long ownerId) {
-        List<ItemDto> items = new ArrayList<>();
-        for (Item item : itemRepository.findAllByOwnerId(ownerId)) {
-            items.add(itemMapper.itemModelToItemDto(item));
-        }
+        List<ItemDto> itemDtos = itemMapper.mapItemsToDtos(itemRepository.findAllByOwnerId(ownerId)); 
+        List<BookingForItemDto> bookingDtos = bookingMapper.mapBookingsToBookingForItemDtos(bookingRepository.findAllByBookerAndStatusEquals(userRepository.findById(ownerId), BookingStatus.APPROVED, Sort.by("id")));
+        enrichItemsWithBookingInfo(itemDtos, bookingDtos);
+        
         return items;
     }
 
@@ -128,5 +131,32 @@ public class ItemServiceImpl implements ItemService {
         commentRepository.save(comment);
 
         return commentMapper.commentModelToCommentDto(comment);
+    }
+
+    public void enrichItemsWithBookingInfo(List<ItemDto> itemDtos, List<BookingForItemDto> bookings) {
+        Map<Long, List<BookingForItemDto>> bookingsByItemId = bookings.stream()
+            .collect(Collectors.groupingBy(BookingForItemDto::getItemId));
+    
+        LocalDateTime now = LocalDateTime.now();
+
+        for (ItemDto item : itemDtos) {
+            Long itemId = item.getId();
+            List<BookingForItemDto> itemBookings = bookingsByItemId.getOrDefault(itemId, Collections.emptyList());
+            
+            Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
+                .filter(b -> b.getStartDate().isBefore(now))
+                .max(Comparator.comparing(BookingForItemDto::getStartDate));
+            
+            Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
+                .filter(b -> b.getStartDate().isAfter(now))
+                .min(Comparator.comparing(BookingForItemDto::getStartDate));
+            
+            lastBookingOpt.ifPresent(lastBooking -> {
+                item.setLastBooking(lastBooking);
+            });
+            nextBookingOpt.ifPresent(nextBooking -> {
+                item.setNextBooking(nextBooking);
+            });
+        }
     }
 }
