@@ -21,13 +21,19 @@ import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Comparator;
+
+import java.time.LocalDateTime;
 
 import static java.time.LocalDateTime.now;
 import static java.util.stream.Collectors.toList;
+
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +56,7 @@ public class ItemServiceImpl implements ItemService {
         
         enrichItemsWithBookingInfo(itemDtos, bookingDtos);
         
-        return items;
+        return itemsDtos;
     }
 
     @Override
@@ -150,11 +156,11 @@ public class ItemServiceImpl implements ItemService {
             
             Optional<BookingForItemDto> lastBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStartDate().isBefore(now))
-                .max(Comparator.comparing(BookingForItemDto::getStartDate));
+                .max(Comparator.comparing(BookingForItemDto::getStart));
             
             Optional<BookingForItemDto> nextBookingOpt = itemBookings.stream()
                 .filter(b -> b.getStartDate().isAfter(now))
-                .min(Comparator.comparing(BookingForItemDto::getStartDate));
+                .min(Comparator.comparing(BookingForItemDto::getStart));
             
             lastBookingOpt.ifPresent(lastBooking -> {
                 item.setLastBooking(lastBooking);
