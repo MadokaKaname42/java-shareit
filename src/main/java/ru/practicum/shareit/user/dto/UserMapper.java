@@ -9,4 +9,6 @@ public interface UserMapper {
     User userDtoToUserModel(UserDto userDto);
 
     UserDto userModelToUserDto(User user);
+
+    UserShortDto userModelToUserShortDto(User user);
 }

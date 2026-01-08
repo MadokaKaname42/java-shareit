@@ -1,5 +1,6 @@
 package ru.practicum.shareit.user.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -20,28 +21,33 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
+    @Override
     public List<UserDto> getAll() {
         return userRepository.findAll().stream().map(userMapper::userModelToUserDto).collect(toList());
     }
 
+    @Override
     public UserDto getById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден ID: " + id));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
 
         return userMapper.userModelToUserDto(user);
     }
 
+    @Transactional
+    @Override
     public UserDto create(UserDto userDto) {
         User user = userMapper.userDtoToUserModel(userDto);
         throwIfEmailNotUnique(user);
-
-        return userMapper.userModelToUserDto(userRepository.create(user));
+        return userMapper.userModelToUserDto(userRepository.save(user));
     }
 
+    @Transactional
+    @Override
     public UserDto update(UserDto userDto, Long id) {
         User user = userMapper.userDtoToUserModel(userDto);
         User updatedUser = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден id = {}" + id));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
         if (user.getEmail() != null && !user.getEmail().isBlank()) {
             throwIfEmailNotUnique(user);
             updatedUser.setEmail(user.getEmail());
@@ -53,9 +59,12 @@ public class UserServiceImpl implements UserService {
         return userMapper.userModelToUserDto(updatedUser);
     }
 
+    @Transactional
+    @Override
     public void delete(Long id) {
-        getById(id);
-        userRepository.delete(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
+        userRepository.delete(user);
     }
 
     private void throwIfEmailNotUnique(User user) {

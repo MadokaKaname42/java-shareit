@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.service;
 
+import ru.practicum.shareit.comments.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import java.util.List;
@@ -16,5 +17,7 @@ public interface ItemService {
     void delete(Long id);
 
     List<ItemDto> search(String text);
+
+    CommentDto createComment(Long itemId, Long userId, CommentDto commentDto);
 }
 
