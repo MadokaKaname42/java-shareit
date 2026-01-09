@@ -1,0 +1,12 @@
+package ru.practicum.shareit.comments.dto;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class CommentDtoPost {
+    private String text;
+}
