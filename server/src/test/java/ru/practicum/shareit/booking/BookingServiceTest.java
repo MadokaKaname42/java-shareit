@@ -298,4 +298,33 @@ class BookingServiceTest {
 
         verify(bookingRepository).findAllByBooker(eq(booker), any(Sort.class));
     }
+
+    @Test
+    void approve_whenOwnerRejects_thenStatusRejected() {
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        BookingDto result = bookingService.approve(
+                booking.getId(),
+                owner.getId(),
+                false
+        );
+
+        assertThat(result).isEqualTo(bookingDto);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.REJECTED);
+    }
+
+    @Test
+    void getAllByUser_whenCurrent_thenReturnList() {
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findAllByBookerAndStartBeforeAndEndAfter(
+                eq(booker), any(LocalDateTime.class), any(LocalDateTime.class), any(Sort.class)
+        )).thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByUser(booker.getId(), "CURRENT");
+
+        assertThat(result).hasSize(1);
+    }
+
 }
