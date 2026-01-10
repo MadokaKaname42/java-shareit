@@ -132,7 +132,14 @@ public class BookingService {
                 .orElseThrow(() -> new NotFoundException("Not found Bookings - " +
                                                          "Not found User with Id " + userId));
         List<Booking> bookingDtoList;
-        switch (BookingState.valueOf(state)) {
+        BookingState bookingState;
+        try {
+            bookingState = BookingState.valueOf(state);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unknown state: UNSUPPORTED_STATUS");
+        }
+
+        switch (bookingState) {
             case ALL:
                 bookingDtoList = bookingRepository.findAllByBooker(user, sort);
                 break;
@@ -159,6 +166,7 @@ public class BookingService {
 
         return bookingDtoList.stream().map(bookingMapper::bookingModelToBookingDto).collect(Collectors.toList());
     }
+
 
     public BookingDto getById(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)

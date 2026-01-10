@@ -369,5 +369,108 @@ class BookingServiceTest {
         verify(bookingRepository, never()).findAllByItemOwner(any(), any());
     }
 
+    @Test
+    void getAllByUser_UnsupportedState() {
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> bookingService.getAllByUser(booker.getId(), "UNKNOWN")
+        );
+
+        assertEquals("Unknown state: UNSUPPORTED_STATUS", exception.getMessage());
+        verify(bookingRepository, never()).findAllByBooker(any(), any());
+    }
+
+    @Test
+    void getAllByUser_PastState() {
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findAllByBookerAndEndBefore(eq(booker), any(), any()))
+                .thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByUser(booker.getId(), "PAST");
+
+        assertEquals(1, result.size());
+        verify(bookingRepository).findAllByBookerAndEndBefore(eq(booker), any(), any());
+    }
+
+    @Test
+    void getAllByUser_FutureState() {
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findAllByBookerAndStartAfter(eq(booker), any(), any()))
+                .thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByUser(booker.getId(), "FUTURE");
+
+        assertEquals(1, result.size());
+        verify(bookingRepository).findAllByBookerAndStartAfter(eq(booker), any(), any());
+    }
+
+    @Test
+    void getAllByUser_WaitingState() {
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findAllByBookerAndStatusEquals(eq(booker), eq(BookingStatus.WAITING), any()))
+                .thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByUser(booker.getId(), "WAITING");
+
+        assertEquals(1, result.size());
+        verify(bookingRepository).findAllByBookerAndStatusEquals(eq(booker), eq(BookingStatus.WAITING), any());
+    }
+
+    @Test
+    void getAllByUser_RejectedState() {
+        booking.setStatus(BookingStatus.REJECTED);
+
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(bookingRepository.findAllByBookerAndStatusEquals(eq(booker), eq(BookingStatus.REJECTED), any()))
+                .thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByUser(booker.getId(), "REJECTED");
+
+        assertEquals(1, result.size());
+        verify(bookingRepository).findAllByBookerAndStatusEquals(eq(booker), eq(BookingStatus.REJECTED), any());
+    }
+
+    @Test
+    void create_whenEndBeforeStart_thenThrowBadRequest() {
+        BookingShortDto dto = BookingShortDto.builder()
+                .itemId(item.getId())
+                .start(LocalDateTime.now().plusDays(2))
+                .end(LocalDateTime.now().plusDays(1))
+                .build();
+
+        when(userRepository.findById(booker.getId())).thenReturn(Optional.of(booker));
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+
+        // Мокируем маппер и возвращаем объект Booking с датами из dto
+        Booking bookingWithWrongDates = new Booking();
+        bookingWithWrongDates.setStart(dto.getStart());
+        bookingWithWrongDates.setEnd(dto.getEnd());
+
+        when(bookingMapper.bookingShortDtoToBookingModel(dto)).thenReturn(bookingWithWrongDates);
+
+        assertThrows(BadRequestException.class,
+                () -> bookingService.create(dto, booker.getId()));
+    }
+
+
+    @Test
+    void getAllByOwner_CurrentState() {
+        when(userRepository.findById(owner.getId())).thenReturn(Optional.of(owner));
+        when(bookingRepository.findAllByItemOwnerAndStartBeforeAndEndAfter(
+                eq(owner), any(), any(), any()))
+                .thenReturn(List.of(booking));
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByOwner(owner.getId(), "CURRENT");
+
+        assertEquals(1, result.size());
+        verify(bookingRepository).findAllByItemOwnerAndStartBeforeAndEndAfter(eq(owner), any(), any(), any());
+    }
 }
 
