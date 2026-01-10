@@ -30,6 +30,7 @@ class ItemRepositoryTest {
     private ItemRequestRepository requestRepository;
 
     private User user;
+    private User otherUser;
     private ItemRequest request;
     private Item item1;
     private Item item2;
@@ -37,12 +38,17 @@ class ItemRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        user = User.builder().name("Alice").email("alice@mail.com").build();
-        user = userRepository.save(user);
+        // Пользователи
+        user = userRepository.save(User.builder().name("Alice").email("alice@mail.com").build());
+        otherUser = userRepository.save(User.builder().name("Bob").email("bob@mail.com").build());
 
-        request = ItemRequest.builder().description("Need item").requestor(user).build();
-        request = requestRepository.save(request);
+        // Запрос
+        request = requestRepository.save(ItemRequest.builder()
+                .description("Need item")
+                .requestor(user)
+                .build());
 
+        // Предметы
         item1 = Item.builder()
                 .name("Item1")
                 .description("Desc1")
@@ -52,18 +58,17 @@ class ItemRepositoryTest {
                 .build();
 
         item2 = Item.builder()
-                .name("Special Item2")
-                .description("Desc2 special")
-                .available(true)
+                .name("SpecialItem")
+                .description("special description")
+                .available(true) // важно: true, чтобы findBySearchText работал
                 .owner(user)
                 .build();
 
         item3 = Item.builder()
-                .name("Item3")
+                .name("OtherItem")
                 .description("Desc3")
                 .available(true)
-                .owner(user)
-                .itemRequest(request)
+                .owner(otherUser)
                 .build();
 
         itemRepository.saveAll(List.of(item1, item2, item3));
@@ -73,16 +78,18 @@ class ItemRepositoryTest {
     void findAllByOwnerIdShouldReturnItems() {
         List<Item> items = itemRepository.findAllByOwnerId(user.getId());
 
-        assertThat(items).hasSize(3)
+        assertThat(items)
+                .hasSize(2)
                 .extracting(Item::getName)
-                .containsExactlyInAnyOrder(item1.getName(), item2.getName(), item3.getName());
+                .containsExactlyInAnyOrder(item1.getName(), item2.getName());
     }
 
     @Test
     void findBySearchTextShouldReturnMatchingItems() {
         List<Item> items = itemRepository.findBySearchText("special");
 
-        assertThat(items).hasSize(1)
+        assertThat(items)
+                .hasSize(1)
                 .first()
                 .extracting(Item::getName)
                 .isEqualTo(item2.getName());
@@ -92,8 +99,28 @@ class ItemRepositoryTest {
     void findAllByItemRequestIdInOrderByIdShouldReturnItems() {
         List<Item> items = itemRepository.findAllByItemRequestIdInOrderById(List.of(request.getId()));
 
-        assertThat(items).hasSize(2)
+        assertThat(items)
+                .hasSize(1)
+                .first()
                 .extracting(Item::getId)
-                .containsExactlyInAnyOrder(item1.getId(), item3.getId());
+                .isEqualTo(item1.getId());
+    }
+
+    @Test
+    void findBySearchTextShouldReturnEmptyForUnavailableItems() {
+        // Делаем item2 недоступным
+        item2.setAvailable(false);
+        itemRepository.save(item2);
+
+        List<Item> items = itemRepository.findBySearchText("special");
+
+        assertThat(items).isEmpty();
+    }
+
+    @Test
+    void findAllByOwnerIdShouldReturnEmptyForNonExistingUser() {
+        List<Item> items = itemRepository.findAllByOwnerId(999L); // пользователь не существует
+
+        assertThat(items).isEmpty();
     }
 }
