@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
@@ -16,6 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@ActiveProfiles("test")
 class ItemRepositoryTest {
 
     @Autowired
@@ -35,21 +37,21 @@ class ItemRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // Создаём и сохраняем пользователя
+        // 1. Сохраняем пользователя
         user = User.builder()
                 .name("Alice")
                 .email("alice@mail.com")
                 .build();
         user = userRepository.save(user);
 
-        // Создаём и сохраняем запрос
+        // 2. Создаём и сохраняем запрос
         request = ItemRequest.builder()
-                .description("Need item")
+                .description("Need an item")
                 .requestor(user)
                 .build();
         request = requestRepository.save(request);
 
-        // Создаём и сохраняем три вещи
+        // 3. Создаём и сохраняем вещи
         item1 = Item.builder()
                 .name("Item1")
                 .description("Description1")
@@ -82,7 +84,7 @@ class ItemRepositoryTest {
 
         assertThat(items).hasSize(3)
                 .extracting(Item::getName)
-                .containsExactlyInAnyOrder("Item1", "Special Item", "Another Item");
+                .containsExactlyInAnyOrder(item1.getName(), item2.getName(), item3.getName());
     }
 
     @Test
@@ -90,8 +92,9 @@ class ItemRepositoryTest {
         List<Item> items = itemRepository.findBySearchText("special");
 
         assertThat(items).hasSize(1)
+                .first()
                 .extracting(Item::getName)
-                .containsExactly("Special Item");
+                .isEqualTo(item2.getName());
     }
 
     @Test
@@ -103,5 +106,3 @@ class ItemRepositoryTest {
                 .containsExactlyInAnyOrder(item1.getId(), item3.getId());
     }
 }
-
-
