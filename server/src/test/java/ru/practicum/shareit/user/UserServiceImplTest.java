@@ -63,7 +63,6 @@ class UserServiceImplTest {
         verify(userRepository, never()).save(any());
     }
 
-
     @Test
     void createWhenValidThenSaveAndReturnDto() {
         UserDto newUser = new UserDto(null, "Alice", "alice@mail.com");
@@ -79,9 +78,6 @@ class UserServiceImplTest {
         verify(userRepository).save(model);
     }
 
-    // -------------------------------------------
-    // update()
-    // -------------------------------------------
     @Test
     void updateWhenUserNotFoundThenThrowNotFound() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
@@ -148,9 +144,6 @@ class UserServiceImplTest {
         assertThrows(NotFoundException.class, () -> userService.getById(1L));
     }
 
-    // -------------------------------------------
-    // getAll()
-    // -------------------------------------------
     @Test
     void getAllWhenUsersExistThenReturnList() {
         User user2 = new User(2L, "Bob", "bob@mail.com");
@@ -173,9 +166,6 @@ class UserServiceImplTest {
         assertThat(result).isEmpty();
     }
 
-    // -------------------------------------------
-    // delete()
-    // -------------------------------------------
     @Test
     void deleteWhenExistsThenDeleteUser() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
