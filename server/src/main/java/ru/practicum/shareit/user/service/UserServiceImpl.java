@@ -11,7 +11,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -37,27 +36,31 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public UserDto create(UserDto userDto) {
+        throwIfEmailNotUnique(userDto);
         User user = userMapper.userDtoToUserModel(userDto);
-        throwIfEmailNotUnique(user);
         return userMapper.userModelToUserDto(userRepository.save(user));
     }
 
     @Transactional
     @Override
     public UserDto update(UserDto userDto, Long id) {
-        User user = userMapper.userDtoToUserModel(userDto);
         User updatedUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
-        if (user.getEmail() != null && !user.getEmail().isBlank()) {
-            throwIfEmailNotUnique(user);
-            updatedUser.setEmail(user.getEmail());
+
+        if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
+            throwIfEmailNotUnique(userDto);
+            updatedUser.setEmail(userDto.getEmail());
         }
-        if (user.getName() != null && !user.getName().isBlank()) {
-            updatedUser.setName(user.getName());
+
+        if (userDto.getName() != null && !userDto.getName().isBlank()) {
+            updatedUser.setName(userDto.getName());
         }
+
+        userRepository.save(updatedUser);
 
         return userMapper.userModelToUserDto(updatedUser);
     }
+
 
     @Transactional
     @Override
@@ -67,10 +70,11 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
-    private void throwIfEmailNotUnique(User user) {
-        for (User userCheck : userRepository.findAll()) {
-            if (user.getEmail().equals(userCheck.getEmail()) && !Objects.equals(user.getId(), userCheck.getId())) {
-                throw new ValidationException("Пользователь с email + " + user.getEmail() + " уже зарегистрирован");
+    private void throwIfEmailNotUnique(UserDto userDto) {
+        for (User user : userRepository.findAll()) {
+            if (user != null && user.getEmail() != null &&
+                user.getEmail().equals(userDto.getEmail())) {
+                throw new ValidationException("Email уже используется: " + userDto.getEmail());
             }
         }
     }
