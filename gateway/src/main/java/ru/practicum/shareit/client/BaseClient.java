@@ -17,6 +17,7 @@ public class BaseClient {
 
         return makeAndSendRequest(HttpMethod.GET, path, userId, parameters, null);
     }
+
     public BaseClient(RestTemplate rest) {
         this.rest = rest;
     }
