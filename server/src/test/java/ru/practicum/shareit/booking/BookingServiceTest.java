@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -327,4 +327,47 @@ class BookingServiceTest {
         assertThat(result).hasSize(1);
     }
 
+    @Test
+    void testGetAllByOwner_AllState() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+
+        when(bookingRepository.findAllByItemOwner(eq(owner), any()))
+                .thenReturn(List.of(booking));
+
+        when(bookingMapper.bookingModelToBookingDto(booking)).thenReturn(bookingDto);
+
+        List<BookingDto> result = bookingService.getAllByOwner(1L, "ALL");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(bookingDto.getId(), result.get(0).getId());
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(bookingRepository, times(1)).findAllByItemOwner(eq(owner), any());
+        verify(bookingMapper, times(1)).bookingModelToBookingDto(booking);
+    }
+
+    @Test
+    void testGetAllByOwner_UserNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> bookingService.getAllByOwner(1L, "ALL"));
+
+        assertEquals("Not found Bookings - there is no User with Id 1", exception.getMessage());
+    }
+
+    @Test
+    void testGetAllByOwner_UnsupportedState() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
+
+        BadRequestException exception = assertThrows(BadRequestException.class,
+                () -> bookingService.getAllByOwner(1L, "UNKNOWN"));
+
+        assertEquals("Unknown state: UNSUPPORTED_STATUS", exception.getMessage());
+
+        verify(bookingRepository, never()).findAllByItemOwner(any(), any());
+    }
+
 }
+
