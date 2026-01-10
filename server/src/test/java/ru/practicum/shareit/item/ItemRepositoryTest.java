@@ -37,39 +37,30 @@ class ItemRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // 1. Сохраняем пользователя
-        user = User.builder()
-                .name("Alice")
-                .email("alice@mail.com")
-                .build();
+        user = User.builder().name("Alice").email("alice@mail.com").build();
         user = userRepository.save(user);
 
-        // 2. Создаём и сохраняем запрос
-        request = ItemRequest.builder()
-                .description("Need an item")
-                .requestor(user)
-                .build();
+        request = ItemRequest.builder().description("Need item").requestor(user).build();
         request = requestRepository.save(request);
 
-        // 3. Создаём и сохраняем вещи
         item1 = Item.builder()
                 .name("Item1")
-                .description("Description1")
+                .description("Desc1")
                 .available(true)
                 .owner(user)
                 .itemRequest(request)
                 .build();
 
         item2 = Item.builder()
-                .name("Special Item")
-                .description("Something special")
+                .name("Special Item2")
+                .description("Desc2 special")
                 .available(true)
                 .owner(user)
                 .build();
 
         item3 = Item.builder()
-                .name("Another Item")
-                .description("Another description")
+                .name("Item3")
+                .description("Desc3")
                 .available(true)
                 .owner(user)
                 .itemRequest(request)
