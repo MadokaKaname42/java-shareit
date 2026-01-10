@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item;
 
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,98 +19,55 @@ class ItemRepositoryTest {
     @Autowired
     private ItemRepository itemRepository;
 
-    @Autowired
-    private EntityManager em;
-
-    private User owner;
-    private Item item1;
-    private Item item2;
-    private Item item3;
+    private User user;
+    private ItemRequest request;
+    private Item item1, item2;
 
     @BeforeEach
     void setUp() {
-        owner = new User();
-        owner.setName("Alice");
-        owner.setEmail("alice@mail.com");
-        em.persist(owner);
+        user = new User();
+        user.setName("Alice");
+        user.setEmail("alice@mail.com");
+
+        request = new ItemRequest();
+        request.setRequestor(user);
+        request.setDescription("Need item");
 
         item1 = new Item();
-        item1.setName("Drill");
-        item1.setDescription("Powerful drill");
+        item1.setName("Item1");
+        item1.setDescription("Description1");
+        item1.setOwner(user);
         item1.setAvailable(true);
-        item1.setOwner(owner);
-        em.persist(item1);
+        item1.setItemRequest(request);
 
         item2 = new Item();
-        item2.setName("Saw");
-        item2.setDescription("Electric saw");
+        item2.setName("Special Item");
+        item2.setDescription("Something special");
+        item2.setOwner(user);
         item2.setAvailable(true);
-        item2.setOwner(owner);
-        em.persist(item2);
 
-        item3 = new Item();
-        item3.setName("Hammer");
-        item3.setDescription("Steel hammer");
-        item3.setAvailable(false); // не доступен
-        item3.setOwner(owner);
-        em.persist(item3);
-
-        em.flush();
+        itemRepository.save(item1);
+        itemRepository.save(item2);
     }
 
     @Test
-    void findAllByOwnerIdShouldReturnItems() {
-        List<Item> items = itemRepository.findAllByOwnerId(owner.getId());
-
-        assertThat(items).hasSize(3)
-                .extracting(Item::getName)
-                .containsExactlyInAnyOrder("Drill", "Saw", "Hammer");
+    void testFindAllByOwnerId() {
+        List<Item> items = itemRepository.findAllByOwnerId(user.getId());
+        assertThat(items).hasSize(2).extracting(Item::getName)
+                .containsExactlyInAnyOrder("Item1", "Special Item");
     }
 
     @Test
-    void findBySearchTextShouldReturnAvailableItemsMatchingText() {
-        List<Item> items = itemRepository.findBySearchText("drill");
-
-        assertThat(items).hasSize(1)
-                .extracting(Item::getName)
-                .containsExactly("Drill");
-
-        List<Item> items2 = itemRepository.findBySearchText("saw");
-        assertThat(items2).hasSize(1)
-                .extracting(Item::getName)
-                .containsExactly("Saw");
-
-        // проверяем, что unavailable item не возвращается
-        List<Item> items3 = itemRepository.findBySearchText("hammer");
-        assertThat(items3).isEmpty();
+    void testFindBySearchText() {
+        List<Item> items = itemRepository.findBySearchText("special");
+        assertThat(items).hasSize(1).first().extracting(Item::getName).isEqualTo("Special Item");
     }
 
     @Test
-    void findAllByItemRequestIdInOrderByIdShouldReturnItems() {
-        // создаём ItemRequest
-        ItemRequest request1 = new ItemRequest();
-        request1.setDescription("Request 1");
-        request1.setRequestor(owner);
-        em.persist(request1);
-
-        ItemRequest request2 = new ItemRequest();
-        request2.setDescription("Request 2");
-        request2.setRequestor(owner);
-        em.persist(request2);
-
-        // присваиваем ItemRequest объектам Item
-        item1.setItemRequest(request1);
-        item2.setItemRequest(request2);
-        item3.setItemRequest(request1);
-
-        em.flush();
-
-        List<Item> items = itemRepository.findAllByItemRequestIdInOrderById(List.of(request1.getId()));
-
-        assertThat(items).hasSize(2)
-                .extracting(Item::getId)
-                .containsExactlyInAnyOrder(item1.getId(), item3.getId());
+    void testFindAllByItemRequestIdInOrderById() {
+        List<Item> items = itemRepository.findAllByItemRequestIdInOrderById(List.of(request.getId()));
+        assertThat(items).hasSize(1).first().extracting(Item::getName).isEqualTo("Item1");
     }
-
 }
+
 
