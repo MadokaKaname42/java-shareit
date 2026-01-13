@@ -37,9 +37,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Transactional
     public ItemRequestDto createRequest(ItemRequestPostDto itemRequestDtoPost, Long userId) {
         User requester = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new NotFoundException("Пользователь с id=" + userId +
-                                              " не существует"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId +
+                                                         " не существует"));
 
         ItemRequest itemRequest = itemRequestMapper.toItemRequest(itemRequestDtoPost, requester);
 
