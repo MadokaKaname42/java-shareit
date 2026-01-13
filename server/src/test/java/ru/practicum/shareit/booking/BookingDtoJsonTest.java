@@ -37,12 +37,13 @@ class BookingDtoJsonTest {
     void testDeserializeBookingDto() throws Exception {
         String json = """
                 {
-                "id": 1,
-                "start": "2026-01-15T10:00:00",
-                "end": "2026-01-17T10:00:00",
-                "status": "WAITING"
+                    "id": 1,
+                    "start": "2026-01-15T10:00:00",
+                    "end": "2026-01-17T10:00:00",
+                    "status": "WAITING"
                 }
                 """;
+
 
         BookingDto dto = objectMapper.readValue(json, BookingDto.class);
 
