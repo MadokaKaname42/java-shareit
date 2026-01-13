@@ -2,9 +2,10 @@ package ru.practicum.shareit.user.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.EmailAlreadyExistsException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -36,9 +37,13 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public UserDto create(UserDto userDto) {
-        throwIfEmailNotUnique(userDto);
         User user = userMapper.userDtoToUserModel(userDto);
-        return userMapper.userModelToUserDto(userRepository.save(user));
+
+        try {
+            return userMapper.userModelToUserDto(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new EmailAlreadyExistsException(user.getEmail());
+        }
     }
 
     @Transactional
@@ -47,20 +52,24 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
 
-        if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
-            throwIfEmailNotUnique(userDto);
-            updatedUser.setEmail(userDto.getEmail());
-        }
 
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             updatedUser.setName(userDto.getName());
         }
+        if (userDto.getEmail() != null) {
+            boolean emailUsedByAnotherUser =
+                    userRepository.existsByEmailAndIdNot(
+                            userDto.getEmail(), id
+                    );
 
-        userRepository.save(updatedUser);
+            if (emailUsedByAnotherUser) {
+                throw new EmailAlreadyExistsException(userDto.getEmail());
+            }
 
-        return userMapper.userModelToUserDto(updatedUser);
+            updatedUser.setEmail(userDto.getEmail());
+        }
+        return userMapper.userModelToUserDto(userRepository.save(updatedUser));
     }
-
 
     @Transactional
     @Override
@@ -68,14 +77,5 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден id: " + id));
         userRepository.delete(user);
-    }
-
-    private void throwIfEmailNotUnique(UserDto userDto) {
-        for (User user : userRepository.findAll()) {
-            if (user != null && user.getEmail() != null &&
-                user.getEmail().equals(userDto.getEmail())) {
-                throw new ValidationException("Email уже используется: " + userDto.getEmail());
-            }
-        }
     }
 }

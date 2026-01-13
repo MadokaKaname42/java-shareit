@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 public class UserDto {
     private Long id;
     private String name;
-    @Email
+    @Email(message = "Некорректный формат email")
     private String email;
 }

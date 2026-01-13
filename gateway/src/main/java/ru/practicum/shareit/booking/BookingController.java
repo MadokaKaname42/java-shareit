@@ -21,7 +21,7 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<Object> createBooking(
-            @RequestHeader("X-Sharer-User-Id") long userId,
+            @RequestHeader(HeaderConstants.USER_ID) long userId,
             @RequestBody @Valid BookingDtoPost bookingDtoPost) {
 
         log.info("BookingDtoShort before send: {}", bookingDtoPost);
